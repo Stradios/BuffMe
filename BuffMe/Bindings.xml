@@ -1,0 +1,10 @@
+<Bindings>
+	<Binding name="CLICK BuffMeButton:LeftButton" header="BUFFME">
+	</Binding>
+	<Binding name="BUFFME_TOGGLELOCK">
+		if BuffMe then BuffMe:ToggleLock() end
+	</Binding>
+	<Binding name="BUFFME_TOGGLEGRID">
+		if BuffMe then BuffMe:ToggleGrid() end
+	</Binding>
+</Bindings>
