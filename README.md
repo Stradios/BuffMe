@@ -36,7 +36,7 @@ It began as a remaster of the old PallyPower and grew into its own add-on that c
 - **Group simulation.** Preview the layout for 5, 10, 25, 40 and 60 players without being in a group.
 - **Flexible layout.** Place the player grid below, above, left or right of the main button, with alignment, scale, icon size and player-button size settings.
 - **Themes.** Auto-detects ElvUI and DragonUI, plus Dark, Retail, Classic, Light and Class colour themes, and an accent colour.
-- **Minimap icon.** Left-click locks or unlocks, right-click opens settings, middle-click opens the paladin assignment grid.
+- **Minimap icon.** Left-click locks or unlocks, right-click opens the paladin assignment grid, middle-click opens settings.
 - **Settings in Interface > AddOns.** General, Appearance, Layout & Simulation, Buffs, Greater Blessings (paladins only), and a How To tab.
 - **Combat safe.** Layout changes made in combat are queued and applied when combat ends.
 
@@ -56,8 +56,8 @@ No external libraries and nothing else to install.
 | Mouse wheel over the button | Same, one cast per notch |
 | Shift / Ctrl / Alt + click | A specific single buff on your target |
 | Left-click minimap icon | Lock / unlock the button |
-| Right-click minimap icon | Open settings |
-| Middle-click minimap icon | Paladin assignment grid |
+| Right-click minimap icon | Paladin assignment grid |
+| Middle-click minimap icon | Open settings |
 | Right-click a player button (paladin) | Choose that player's blessing |
 
 A key binding is available under *Esc > Key Bindings > Buff Me*, or use the macro `/click BuffMeButton`.

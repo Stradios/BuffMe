@@ -303,13 +303,13 @@ H1 .. "Greater or normal blessings?" .. R .. "\n" ..
 "Modifier-key clicks always use the normal blessing.\n\n" ..
 
 H1 .. "Assignment window" .. R .. "\n" ..
-"Middle-click the minimap icon (or /bm grid) to see who casts what on which class. It is for looking, and for overrides: click a cell to change it, right-click to go back to automatic. " ..
+"Right-click the minimap icon (or /bm grid) to see who casts what on which class. It is for looking, and for overrides: click a cell to change it, right-click to go back to automatic. " ..
 "You can change your own row; raid leaders and assistants can change anyone's. Overrides last until you leave the group or reload.\n\n" ..
 
 H1 .. "Minimap icon" .. R .. "\n" ..
 H2 .. "Left-click:" .. R .. " lock / unlock the button. Unlocked, the button has a yellow border and can be dragged. The padlock on the icon shows the current state.\n" ..
-H2 .. "Right-click:" .. R .. " open these settings.\n" ..
-H2 .. "Middle-click:" .. R .. " assignment window.\n" ..
+H2 .. "Right-click:" .. R .. " assignment window.\n" ..
+H2 .. "Middle-click:" .. R .. " open these settings.\n" ..
 H2 .. "Drag:" .. R .. " move the icon around the minimap.\n\n" ..
 
 H1 .. "Looks" .. R .. "\n" ..
