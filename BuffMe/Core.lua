@@ -7,7 +7,7 @@ BuffMe = BuffMe or {}
 local BM = BuffMe
 
 BM.name = "BuffMe"
-BM.version = "1.3.2"
+BM.version = "1.3.3"
 BM.PREFIX = "BuffMe"
 
 local pairs, ipairs, type, tinsert = pairs, ipairs, type, table.insert

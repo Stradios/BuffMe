@@ -2,11 +2,11 @@
 ## Title: Buff Me
 ## Notes: One-click smart buffing for every buffing class. Auto-assigns Paladin blessings, no setup required.
 ## Author: Stradios
-## Version: 1.3.2
+## Version: 1.3.3
 ## SavedVariables: BuffMeDB
 ## OptionalDeps: ElvUI, DragonUI
 ## X-Category: Combat
-## IconTexture: Interface\Icons\Spell_Holy_GreaterBlessingofKings
+## IconTexture: Interface\AddOns\BuffMe\Icon
 
 Core.lua
 Compat.lua
