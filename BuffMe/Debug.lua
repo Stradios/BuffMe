@@ -60,6 +60,29 @@ function BM:DebugReport()
 	self:Print("API: " .. table.concat(api, " "))
 	self:DumpSpells()
 
+	-- what the talent / spec readers return, and which talent-ish functions this client has
+	local gs = GetSpecialization or (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization)
+	local okS, sv = false, nil
+	if gs then okS, sv = pcall(gs) end
+	local ut = {}
+	for k, v in pairs(_G) do
+		if type(v) == "function" and type(k) == "string" and (k:find("Talent") or k:find("Specializ")) and #ut < 40 then
+			ut[#ut + 1] = k
+		end
+	end
+	table.sort(ut)
+	local tabs = {}
+	if GetTalentTabInfo then
+		for i = 1, 3 do
+			local okT, a, b, c, d, e = pcall(GetTalentTabInfo, i)
+			tabs[#tabs + 1] = i .. "=" .. S(okT) .. "/" .. S(a) .. "/" .. S(c) .. "/" .. S(e)
+		end
+	end
+	self:Print(("spec readers: getSpec=%s -> %s | roleHint=%s | groupRole=%s | tabs: %s"):format(
+		S(gs ~= nil), S(sv), S(self.API.RoleHint(self.playerClass)),
+		S(UnitGroupRolesAssigned and UnitGroupRolesAssigned("player")), table.concat(tabs, " ")))
+	self:Print("talent functions: " .. table.concat(ut, ", "))
+
 	local btn = _G.BuffMeButton
 	if btn then
 		self:Print(("button: shown=%s type=%s spell=%s unit=%s macrotext=%s useOnKeyDown=%s"):format(

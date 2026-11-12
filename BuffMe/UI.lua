@@ -687,9 +687,9 @@ local function CreateMinimapButton()
 
 	mini:SetScript("OnClick", function(_, button)
 		if button == "RightButton" then
-			BM:OpenOptions()
-		elseif button == "MiddleButton" then
 			BM:ToggleGrid()
+		elseif button == "MiddleButton" then
+			BM:OpenOptions()
 		else
 			BM:ToggleLock()
 		end
@@ -716,8 +716,8 @@ local function CreateMinimapButton()
 			BM.db.locked and 0.4 or 1, BM.db.locked and 1 or 0.82, BM.db.locked and 0.5 or 0.2)
 		GameTooltip:AddLine(" ")
 		GameTooltip:AddDoubleLine("Left-click", "Lock / unlock", 0.8, 0.8, 0.8, 1, 1, 1)
-		GameTooltip:AddDoubleLine("Right-click", "Settings", 0.8, 0.8, 0.8, 1, 1, 1)
-		GameTooltip:AddDoubleLine("Middle-click", "Assignments", 0.8, 0.8, 0.8, 1, 1, 1)
+		GameTooltip:AddDoubleLine("Right-click", "Assignments", 0.8, 0.8, 0.8, 1, 1, 1)
+		GameTooltip:AddDoubleLine("Middle-click", "Settings", 0.8, 0.8, 0.8, 1, 1, 1)
 		GameTooltip:AddDoubleLine("Drag", "Move this icon", 0.8, 0.8, 0.8, 1, 1, 1)
 		GameTooltip:Show()
 	end)

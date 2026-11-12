@@ -223,9 +223,18 @@ function BM:ComputePlan()
 		end
 	end
 
+	-- a class the user set by hand is left alone: no automatic exception on top of a manual choice
+	local function manuallySet(class)
+		for _, pal in ipairs(pals) do
+			local ov = self.overrides[pal.name]
+			if ov and ov[class] and ov[class] ~= "auto" then return true end
+		end
+		return false
+	end
+
 	for _, u in ipairs(members) do
 		local ideal = u.roleKnown and IDEAL[u.role]
-		if ideal then
+		if ideal and not manuallySet(u.class) then
 			local got = {}
 			for _, pal in ipairs(pals) do
 				local x = plan.class[pal.name] and plan.class[pal.name][u.class]
