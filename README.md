@@ -1,5 +1,7 @@
 # Buff Me
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M8K423K344)
+
 **One-click smart buffing for every buffing class, on WoW 3.3.5a (Wrath of the Lich King) and WoW: Forever.**
 
 Buff Me is a modern, themed buff manager. Press one button and it casts the next buff that someone in your group or raid needs. Keep pressing and everyone gets buffed. Paladin blessings are assigned automatically, with no setup panel to open.
@@ -95,3 +97,9 @@ Work for the Forever version happens on the `Forever` branch. Branch from it, op
 ## Author
 
 Stradios
+
+## Support
+
+If Buff Me saves you time, you can support its development:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M8K423K344)
