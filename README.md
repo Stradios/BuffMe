@@ -4,6 +4,10 @@
 
 Buff Me is a modern, themed buff manager. Press one button and it casts the next buff that someone in your group or raid needs. Keep pressing and everyone gets buffed. Paladin blessings are assigned automatically, with no setup panel to open.
 
+> **This is the `Forever` branch: the home of Buff Me for WoW: Forever.** All Forever development, fixes and contributions happen here. The original 3.3.5a-only version lives on separately in the `main` branch and is not replaced by this one.
+>
+> Branch guide: **`Forever`** = active development for WoW: Forever (it also still runs on 3.3.5a). **`main`** = the original, frozen 3.3.5a release.
+
 It began as a remaster of the old PallyPower and grew into its own add-on that covers every class that can buff others.
 
 ![Buff Me layouts for 5, 10, 25, 40 and 60 players](docs/buffme-layouts.gif)
@@ -83,6 +87,10 @@ These can be changed in the settings.
 - The client allows one cast per click, so Buff Me picks the next target after each cast and you click again (or use the mouse wheel or a key binding).
 - A paladin has one blessing per target; a new blessing replaces the previous one. The assignment is built around that.
 - DragonUI has no public theming API, so its detection uses the Retail look as a best guess.
+
+## Contributing
+
+Work for the Forever version happens on the `Forever` branch. Branch from it, open pull requests against it, and keep client differences inside `BuffMe/Compat.lua` so the rest of the add-on stays version-neutral. Please report Forever beta Lua errors with the build number from `/dump select(4, GetBuildInfo())`.
 
 ## Author
 
