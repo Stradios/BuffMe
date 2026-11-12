@@ -52,22 +52,56 @@ function UI:Layout()
 	S:Font(btn.label, 10, "OUTLINE")
 end
 
-local function PreClick(self)
+--- Tell a secure button what to cast. "spell" mode uses the plain secure spell action;
+--  "macro" mode runs "/cast [@unit] Spell" instead (a fallback for clients where the
+--  spell action does not fire; switch with /bm cast macro).
+local function ApplyCast(self, res)
+	if not res then
+		self:SetAttribute("spell", nil)
+		self:SetAttribute("unit", nil)
+		self:SetAttribute("macrotext", nil)
+		return
+	end
+	if BM.db.castMode == "macro" then
+		self:SetAttribute("type", "macro")
+		self:SetAttribute("macrotext", "/cast [@" .. res.unit .. "] " .. res.spell)
+		self:SetAttribute("spell", nil)
+		self:SetAttribute("unit", nil)
+	else
+		self:SetAttribute("type", "spell")
+		self:SetAttribute("macrotext", nil)
+		self:SetAttribute("spell", res.spell)
+		self:SetAttribute("unit", res.unit)
+	end
+end
+UI.ApplyCast = ApplyCast
+
+--- Newer clients fire secure buttons on key DOWN when the ActionButtonUseKeyDown option is on,
+--  and ignore buttons that only listen for the release. Listen for both and always act on the
+--  release so a click is one cast on every client.
+local function RegisterClicks(b, kind)
+	if BM.modern then
+		if kind == "left" then b:RegisterForClicks("LeftButtonUp", "LeftButtonDown")
+		else b:RegisterForClicks("AnyUp", "AnyDown") end
+		b:SetAttribute("useOnKeyDown", false)
+	else
+		if kind == "left" then b:RegisterForClicks("LeftButtonUp") else b:RegisterForClicks("AnyUp") end
+	end
+end
+
+local function PreClick(self, button, down)
+	if down then return end -- decide on the release only (see RegisterClicks)
 	if InCombatLockdown() then return end
 	local p = Provider()
 	if not p then return end
 	local res, msg = p:Select(BM:GetModifier(), true)
-	if res then
-		self:SetAttribute("spell", res.spell)
-		self:SetAttribute("unit", res.unit)
-	else
-		self:SetAttribute("spell", nil)
-		self:SetAttribute("unit", nil)
-		if msg then BM:Notice(msg) end
-	end
+	ApplyCast(self, res)
+	if not res and msg then BM:Notice(msg) end
+	if BM.debugOn then BM:DebugClick(self, res, msg) end
 end
 
-local function PostClick()
+local function PostClick(self, button, down)
+	if down then return end
 	BM:Schedule("postclick", 0.35, function() UI:Update() end)
 end
 
@@ -76,7 +110,7 @@ local function CreateButton()
 	btn:SetFrameStrata("MEDIUM")
 	btn:SetClampedToScreen(true)
 	btn:SetMovable(true)
-	btn:RegisterForClicks("AnyUp")
+	RegisterClicks(btn, "any")
 	btn:RegisterForDrag("LeftButton")
 	btn:SetAttribute("type", "spell")
 
@@ -309,9 +343,10 @@ local function PlayerTooltip(self)
 	GameTooltip:Show()
 end
 
-local function PlayerPreClick(self)
+local function PlayerPreClick(self, button, down)
+	if down then return end
 	if self.sim then
-		self:SetAttribute("spell", nil)
+		ApplyCast(self, nil)
 		BM:Notice("Group simulation: these buttons are not live.")
 		return
 	end
@@ -319,17 +354,13 @@ local function PlayerPreClick(self)
 	local p = Provider()
 	local m = self.memberName and BM.members[self.memberName]
 	if not (p and m and p.SelectUnit) then
-		self:SetAttribute("spell", nil)
+		ApplyCast(self, nil)
 		return
 	end
 	local res, msg = p:SelectUnit(m, BM:GetModifier(), true)
-	if res then
-		self:SetAttribute("spell", res.spell)
-		self:SetAttribute("unit", res.unit)
-	else
-		self:SetAttribute("spell", nil)
-		if msg then BM:Notice(msg) end
-	end
+	ApplyCast(self, res)
+	if not res and msg then BM:Notice(msg) end
+	if BM.debugOn then BM:DebugClick(self, res, msg) end
 end
 
 local menuFrame
@@ -383,7 +414,7 @@ UI.ShowPlayerMenu = ShowPlayerMenu
 
 local function CreatePlayerButton(i)
 	local b = CreateFrame("Button", "BuffMePlayer" .. i, pframe, "SecureActionButtonTemplate")
-	b:RegisterForClicks("LeftButtonUp")
+	RegisterClicks(b, "left")
 	b:SetAttribute("type", "spell")
 	b.icon = b:CreateTexture(nil, "ARTWORK")
 	b.icon:SetTexture(CLASS_TEX)
@@ -422,7 +453,10 @@ local PLACE = {
 UI.PLACE = PLACE
 
 -- Group simulation: fake players so the layout can be tuned without a group -----
-local SIM_CLASSES = { "WARRIOR", "PALADIN", "PRIEST", "MAGE", "DRUID", "ROGUE", "HUNTER", "SHAMAN", "WARLOCK", "DEATHKNIGHT" }
+local SIM_CLASSES = {}
+for _, c in ipairs({ "WARRIOR", "PALADIN", "PRIEST", "MAGE", "DRUID", "ROGUE", "HUNTER", "SHAMAN", "WARLOCK", "DEATHKNIGHT" }) do
+	if BM:ClassExists(c) then SIM_CLASSES[#SIM_CLASSES + 1] = c end
+end
 BM.sim = { on = false, size = 25 }
 
 local function SimRoster()

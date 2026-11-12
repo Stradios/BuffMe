@@ -39,6 +39,8 @@ local DEFS = {
 	},
 }
 
+if BM.forever then DEFS.DEATHKNIGHT = nil end -- no Death Knights in Forever
+
 local recent = {}
 local function IsRecent(key)
 	local t = recent[key]

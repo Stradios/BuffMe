@@ -9,6 +9,8 @@ local BM = BuffMe
 local function SP(id, en) return { id = id, en = en } end
 BM.SP = SP
 
+local known, knownID, book = {}, {}, {}
+
 -- Spell helpers -------------------------------------------------------------
 function BM:SpellName(def)
 	if def.name then return def.name end
@@ -19,23 +21,43 @@ function BM:SpellName(def)
 end
 
 function BM:SpellTexture(def)
-	local _, _, tex = BM.API.GetSpellInfo(def.id)
-	if not tex then _, _, tex = BM.API.GetSpellInfo(self:SpellName(def)) end
+	local name = self:SpellName(def)
+	local b = book[name]
+	local tex = b and b.icon
+	if not tex then _, _, tex = BM.API.GetSpellInfo(name) end
+	if not tex and not BM.forever then _, _, tex = BM.API.GetSpellInfo(def.id) end
 	return tex or "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 
-local known, knownID = {}, {}
-BM.known = known
+BM.known, BM.book = known, book
+local bookRead = false
 
 function BM:ScanSpellbook()
-	BM.API.ScanSpellbook(known, knownID)
+	bookRead = BM.API.ScanSpellbook(known, knownID, book) and true or false
 end
 
+--- Spells are matched by NAME. Spell ids differ between clients (and on Forever the
+--  Wrath ids point at other spells), and casting by name always uses the highest rank
+--  you have learned, so a new rank from the trainer is picked up automatically.
 function BM:Knows(def)
 	if not def then return false end
-	if knownID[def.id] or known[self:SpellName(def)] then return true end
-	-- clients that can answer "do I know spell X" directly (ids may differ per client)
+	if known[self:SpellName(def)] then return true end
+	if bookRead then return false end
+	-- no spellbook API at all: fall back to asking by id
 	return BM.API.IsSpellKnownByID(def.id) == true
+end
+
+--- Highest learned rank (0 when the client has no ranks), or nil when unknown.
+function BM:SpellRank(def)
+	local b = def and book[self:SpellName(def)]
+	return b and b.rank or nil
+end
+
+--- "Blessing of Might (Rank 2)" style label.
+function BM:SpellLabel(def)
+	local name, rank = self:SpellName(def), self:SpellRank(def)
+	if rank and rank > 0 then return name .. " (Rank " .. rank .. ")" end
+	return name
 end
 
 BM:On("SPELLS_CHANGED", function() BM:ScanSpellbook() end)
@@ -47,6 +69,16 @@ BM.CLASS_ORDER = {
 	"WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
 	"DEATHKNIGHT", "SHAMAN", "MAGE", "WARLOCK", "DRUID",
 }
+-- WoW: Forever has no Death Knights: leave them out of every list and window.
+if BM.forever then
+	for i = #BM.CLASS_ORDER, 1, -1 do
+		if BM.CLASS_ORDER[i] == "DEATHKNIGHT" then table.remove(BM.CLASS_ORDER, i) end
+	end
+end
+function BM:ClassExists(class)
+	for _, c in ipairs(self.CLASS_ORDER) do if c == class then return true end end
+	return false
+end
 
 -- Paladin blessings ---------------------------------------------------------
 BM.BLESSINGS = {

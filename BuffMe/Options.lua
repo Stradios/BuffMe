@@ -280,8 +280,12 @@ H2 .. "Priest:" .. R .. "  Shift = Fortitude,  Ctrl = Divine Spirit,  Alt = Shad
 H2 .. "Druid:" .. R .. "  Shift = Mark of the Wild,  Ctrl = Thorns.\n" ..
 H2 .. "Mage:" .. R .. "  Shift = Arcane Intellect.\n" ..
 H2 .. "Warrior:" .. R .. "  Shift = Battle Shout,  Ctrl = Commanding Shout.\n" ..
-H2 .. "Death Knight:" .. R .. "  Shift = Horn of Winter.\n" ..
+(BM.forever and "" or (H2 .. "Death Knight:" .. R .. "  Shift = Horn of Winter.\n")) ..
 "If your game is set to self-cast with Alt, an Alt click may land on you. Change that under Interface > Combat, or move the paladin Wisdom key to another combination.\n\n" ..
+
+H1 .. "Spell ranks" .. R .. "\n" ..
+"Buff Me finds the highest rank of every buff in your spellbook by itself and casts that one. After you learn a new rank at the trainer it is picked up automatically. " ..
+"/bm spells lists what was found. If your role is wrong (for example a tank paladin), set it under General > My role, or /bm role tank. If clicking does nothing, try /bm cast macro and /bm debug.\n\n" ..
 
 H1 .. "Paladin blessings: how they are assigned" .. R .. "\n" ..
 "Buff Me works out the assignments by itself whenever the group changes. It looks at which classes are present, what role each player has, and which paladins are in the group. " ..
@@ -348,9 +352,25 @@ local function BuildGeneral()
 	}, function() return db.showButton end,
 		function(v) db.showButton = v; BM.UI:Update() end, 220)
 
-	Button(p, x + 4, y - 250, "Reset button position", 170, function() BM:ResetPosition() end)
-	Button(p, x + 182, y - 250, "Assignment window", 170, function() BM:ToggleGrid() end)
-	Button(p, x + 4, y - 280, "Clear manual overrides", 170, function() BM:ClearOverrides() end)
+	Dropdown(p, x + 4, y - 235, "My role (auto-detected from your spec)", {
+		{ value = "auto", text = "Automatic" },
+		{ value = "tank", text = "Tank" },
+		{ value = "healer", text = "Healer" },
+		{ value = "melee", text = "Melee damage" },
+		{ value = "ranged", text = "Ranged damage" },
+		{ value = "caster", text = "Caster damage" },
+	}, function() return db.myRole or "auto" end,
+		function(v) db.myRole = v; BM:DetectSelfSpec(); BM:SendHello(); BM:RequestRefresh(0.05) end, 220)
+
+	Dropdown(p, x + 4, y - 290, "Cast method (try Macro if clicking does nothing)", {
+		{ value = "spell", text = "Spell (default)" },
+		{ value = "macro", text = "Macro" },
+	}, function() return db.castMode or "spell" end,
+		function(v) db.castMode = v end, 220)
+
+	Button(p, x + 4, y - 345, "Reset button position", 170, function() BM:ResetPosition() end)
+	Button(p, x + 182, y - 345, "Assignment window", 170, function() BM:ToggleGrid() end)
+	Button(p, x + 4, y - 375, "Clear manual overrides", 170, function() BM:ClearOverrides() end)
 	return p
 end
 

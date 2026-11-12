@@ -89,7 +89,8 @@ function BM:ComputePlan()
 	-- blessings worth casting for this group, most important first
 	local B
 	if n == 1 then
-		B = { db.singlePaladinKings and "kings" or "auto" }
+		-- a lone paladin who has not learned Kings yet (level < 20) buffs what suits each class
+		B = { (db.singlePaladinKings and pals[1].caps.kings) and "kings" or "auto" }
 	else
 		B = { "kings" }
 		local first, second, nfirst, nsecond = "might", "wisdom", phys, mana
@@ -154,9 +155,17 @@ function BM:ComputePlan()
 		for _, o in ipairs(order) do
 			local pal, b = o.pal, o.b
 			if b == "auto" then
-				local pick = P[2] or P[1]
-				if not pal.caps[pick] then pick = "kings" end
-				assign(pal, pick)
+				-- the best blessing for this class that THIS paladin has actually learned
+				local pick
+				for _, x in ipairs(P) do
+					if pal.caps[x] then pick = x break end
+				end
+				if not pick then
+					for _, x in ipairs(BM.BLESSING_ORDER) do
+						if pal.caps[x] then pick = x break end
+					end
+				end
+				if pick then assign(pal, pick) end
 			elseif b ~= "sanctuary" then
 				if InList(P, b) and not covered[b] and pal.caps[b] then
 					assign(pal, b)
@@ -464,7 +473,10 @@ function P:ModLines()
 	local labels = { { "shift", "Shift" }, { "ctrl", "Ctrl" }, { "alt", "Alt" }, { "ctrlshift", "Shift+Ctrl" } }
 	for _, e in ipairs(labels) do
 		local key = db.mods[e[1]]
-		if key then out[#out + 1] = { e[2] .. " + click", BM:BlessingName(key) .. " (normal)" } end
+		if key then
+			local def = BM.BLESSINGS[key]
+			out[#out + 1] = { e[2] .. " + click", (def and BM:SpellLabel(def.normal) or BM:BlessingName(key)) .. " (normal)" }
+		end
 	end
 	return out
 end

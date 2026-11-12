@@ -18,6 +18,13 @@ local pcall, type, pairs, ipairs, select = pcall, type, pairs, ipairs, select
 -- Which family are we on? Detected by API presence, never by build number.
 BM.modern = (C_Spell ~= nil and C_Spell.GetSpellInfo ~= nil) or (C_UnitAuras ~= nil)
 
+-- WoW: Forever (original world, vanilla-style ranked spells, no Death Knights ...).
+-- Detected by the project constant or by the 16xxx interface number; never by build number.
+local tocVersion = select(4, GetBuildInfo())
+BM.forever = (WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT)
+	or (type(tocVersion) == "number" and tocVersion >= 16000 and tocVersion < 17000)
+	or false
+
 local issecret = issecretvalue or function() return false end
 API.issecret = issecret
 
@@ -78,10 +85,29 @@ function API.IsAddOnLoaded(name)
 end
 
 -- Spellbook -------------------------------------------------------------------
---- Fills `known` (name -> true) and `knownID` (id -> true) with everything the player can cast.
-function API.ScanSpellbook(known, knownID)
+local function RankOf(sub)
+	if type(sub) ~= "string" or issecret(sub) then return 0 end
+	return tonumber(sub:match("(%d+)")) or 0
+end
+
+local function Note(known, knownID, book, name, id, rank, icon)
+	if not name or issecret(name) then return end
+	known[name] = true
+	if id then knownID[id] = true end
+	local b = book[name]
+	-- keep the highest rank (the add-on casts by name, so the client picks it too)
+	if not b or rank >= b.rank then
+		book[name] = { id = id, rank = rank, icon = icon or (b and b.icon) }
+	end
+end
+
+--- Fills `known` (name -> true), `knownID` (id -> true) and `book` (name -> {id, rank, icon},
+--  highest rank only) with everything the player can cast. Returns true when a spellbook
+--  API was actually read.
+function API.ScanSpellbook(known, knownID, book)
 	for k in pairs(known) do known[k] = nil end
 	for k in pairs(knownID) do knownID[k] = nil end
+	for k in pairs(book) do book[k] = nil end
 
 	-- Modern: C_SpellBook
 	if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines and C_SpellBook.GetSpellBookSkillLineInfo
@@ -94,28 +120,31 @@ function API.ScanSpellbook(known, knownID)
 					local first = li.itemIndexOffset or 0
 					for i = first + 1, first + (li.numSpellBookItems or 0) do
 						local item = C_SpellBook.GetSpellBookItemInfo(i, bank)
-						if item and not issecret(item.name) then
-							if item.name then known[item.name] = true end
-							if item.spellID then knownID[item.spellID] = true end
-							if item.actionID then knownID[item.actionID] = true end
+						local future = Enum.SpellBookItemType and Enum.SpellBookItemType.FutureSpell
+						if item and not (future and item.itemType == future) then
+							Note(known, knownID, book, item.name, item.spellID or item.actionID,
+								RankOf(item.subName), item.iconID)
 						end
 					end
 				end
 			end
 		end)
-		if ok then return end
+		if ok then return true end
 	end
 
-	-- 3.3.5a: GetSpellName
+	-- 3.3.5a / classic style: GetSpellName gives name + "Rank N"
 	if GetSpellName then
 		local i = 1
 		while true do
-			local name = GetSpellName(i, BOOKTYPE_SPELL or "spell")
+			local name, sub = GetSpellName(i, BOOKTYPE_SPELL or "spell")
 			if not name then break end
-			known[name] = true
+			local icon = GetSpellTexture and GetSpellTexture(i, BOOKTYPE_SPELL or "spell")
+			Note(known, knownID, book, name, nil, RankOf(sub), icon)
 			i = i + 1
 		end
+		return true
 	end
+	return false
 end
 
 --- Direct "do I know this spell id" query when the client offers one.
@@ -255,6 +284,22 @@ function API.SelfSpec()
 		end
 	end
 	return 0, nil
+end
+
+--- Best guess at "am I tanking right now" when talents can't be read:
+--  Righteous Fury (paladin), Defensive Stance (warrior), Bear Form (druid).
+function API.RoleHint(class)
+	if class == "PALADIN" then
+		local a = API.ReadAuras("player")
+		if not a.restricted and a["Righteous Fury"] then return "tank" end
+	elseif class == "WARRIOR" then
+		if GetShapeshiftForm and GetShapeshiftForm() == 2 then return "tank" end
+	elseif class == "DRUID" then
+		local id = GetShapeshiftFormID and GetShapeshiftFormID()
+		if id == 5 or id == 8 then return "tank" end
+		if not GetShapeshiftFormID and GetShapeshiftForm and GetShapeshiftForm() == 1 then return "tank" end
+	end
+	return nil
 end
 
 --- Can we read other players' talents? (3.3.5a only; elsewhere roles come from the group.)

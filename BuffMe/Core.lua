@@ -7,7 +7,7 @@ BuffMe = BuffMe or {}
 local BM = BuffMe
 
 BM.name = "BuffMe"
-BM.version = "1.3.0"
+BM.version = "1.3.1"
 BM.PREFIX = "BuffMe"
 
 local pairs, ipairs, type, tinsert = pairs, ipairs, type, table.insert
@@ -36,6 +36,8 @@ BM.defaults = {
 	showTargetName = true,
 	tooltips = true,
 	wheelCast = true,
+	castMode = "spell",             -- spell | macro  (macro is a fallback, see /bm cast)
+	myRole = "auto",                -- auto | tank | healer | melee | ranged | caster
 	greaterMode = "auto",           -- auto | greater | normal
 	greaterMinGroup = 4,            -- groups this size or bigger use Greater Blessings
 	rebuffMinutes = 2,              -- re-buff when less than this is left (own casts)
@@ -178,8 +180,32 @@ SlashCmdList["BUFFME"] = function(msg)
 		BM:Print(BM.sim.on and ("Group simulation on (" .. BM.sim.size .. " players).") or "Group simulation off.")
 	elseif msg == "plan" then
 		BM:DumpPlan()
+	elseif msg == "debug" or msg == "debug on" or msg == "debug off" then
+		if msg == "debug on" then BM.debugOn = true elseif msg == "debug off" then BM.debugOn = false end
+		BM:DebugReport()
+	elseif msg == "spells" then
+		BM:DumpSpells()
+	elseif msg:find("^role") then
+		local r = msg:match("^role%s+(%a+)")
+		local ok = { auto = 1, tank = 1, healer = 1, melee = 1, ranged = 1, caster = 1 }
+		if r and ok[r] then
+			BM.db.myRole = r
+			BM:DetectSelfSpec(); BM:SendHello(); BM:RequestRefresh(0.05)
+			BM:Print("Your role is now: " .. r .. (r == "auto" and " (detected automatically)" or " (set by hand)") .. ".")
+		else
+			BM:Print("Role: " .. tostring(BM.myRole) .. " (setting: " .. tostring(BM.db.myRole) .. "). Use /bm role auto | tank | healer | melee | ranged | caster")
+		end
+	elseif msg:find("^cast") then
+		local m = msg:match("^cast%s+(%a+)")
+		if m == "spell" or m == "macro" then
+			BM.db.castMode = m
+			BM:Print("Cast method: " .. m .. ".")
+		else
+			BM:Print("Cast method: " .. tostring(BM.db.castMode) .. ". Use /bm cast spell | macro")
+		end
 	elseif msg == "help" then
 		BM:Print("/bm  - open settings   |  /bm lock | unlock  |  /bm grid  - assignments  |  /bm sim [size]  - group simulation  |  /bm reset")
+		BM:Print("/bm spells  - spells and ranks found   |  /bm role [x]  |  /bm cast spell | macro  |  /bm debug [on | off]  - report for bug reports")
 	else
 		BM:OpenOptions()
 	end

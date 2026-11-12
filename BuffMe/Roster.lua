@@ -29,15 +29,25 @@ end
 
 function BM:DetectSelfSpec()
 	local best, apiRole = self.API.SelfSpec()
-	self.mySpec = best
 	local roles = (self.modern and self.SPEC_ROLE_MODERN[self.playerClass]) or self.SPEC_ROLE[self.playerClass]
 	local role = apiRole or (roles and roles[best])
 	if UnitGroupRolesAssigned then
 		local r = UnitGroupRolesAssigned("player")
 		if r == "TANK" then role = "tank" elseif r == "HEALER" then role = "healer" end
 	end
+	-- talents unreadable (or not spent yet): look at what you are doing right now
+	local hint = self.API.RoleHint(self.playerClass)
+	if hint then role = hint end
+	-- a role chosen by hand in the settings always wins
+	local manual = self.db and self.db.myRole
+	if manual and manual ~= "auto" then role = manual end
+	-- the paladin plan scores blessings by spec, so give a role-only paladin a matching spec
+	if (not best or best == 0) and self.playerClass == "PALADIN" and role then
+		best = (role == "healer" and 1) or (role == "tank" and 2) or ((role == "melee" or role == "ranged") and 3) or 0
+	end
+	self.mySpec = best or 0
 	self.myRole = role
-	return best
+	return self.mySpec
 end
 
 -- Roster scan ---------------------------------------------------------------
@@ -307,6 +317,16 @@ local function SpecChanged()
 	end)
 end
 BM:On("PLAYER_TALENT_UPDATE", SpecChanged)
+-- stance / form / Righteous Fury changes can flip "tank" on and off
+local function RoleMaybeChanged()
+	BM:Schedule("rolecheck", 0.6, function()
+		local old = BM.myRole
+		BM:DetectSelfSpec()
+		if BM.myRole ~= old then BM:SendHello(); BM:RequestRefresh(0.1) end
+	end)
+end
+BM:On("UPDATE_SHAPESHIFT_FORM", RoleMaybeChanged)
+BM:On("UNIT_AURA", function(_, unit) if unit == "player" and BM.playerClass == "PALADIN" then RoleMaybeChanged() end end)
 BM:On("PLAYER_SPECIALIZATION_CHANGED", function(_, unit)
 	if unit == nil or unit == "player" then SpecChanged() end
 end)
