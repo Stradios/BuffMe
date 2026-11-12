@@ -28,15 +28,10 @@ function BM:MyCaps()
 end
 
 function BM:DetectSelfSpec()
-	local group = (GetActiveTalentGroup and GetActiveTalentGroup()) or 1
-	local best, bestPts = 0, 0
-	for i = 1, 3 do
-		local _, _, pts = GetTalentTabInfo(i, false, false, group)
-		if pts and pts > bestPts then best, bestPts = i, pts end
-	end
+	local best, apiRole = self.API.SelfSpec()
 	self.mySpec = best
-	local roles = self.SPEC_ROLE[self.playerClass]
-	local role = roles and roles[best]
+	local roles = (self.modern and self.SPEC_ROLE_MODERN[self.playerClass]) or self.SPEC_ROLE[self.playerClass]
+	local role = apiRole or (roles and roles[best])
 	if UnitGroupRolesAssigned then
 		local r = UnitGroupRolesAssigned("player")
 		if r == "TANK" then role = "tank" elseif r == "HEALER" then role = "healer" end
@@ -109,16 +104,16 @@ function BM:ScanRoster()
 		tinsert(byClass[class], m)
 	end
 
-	local nraid = GetNumRaidMembers()
+	local nraid = self.API.NumRaid()
 	if nraid > 0 then
 		for i = 1, nraid do
 			local name, rank, subgroup, _, _, _, _, _, _, role = GetRaidRosterInfo(i)
 			if name then add("raid" .. i, subgroup, role, rank) end
 		end
 	else
-		add("player", 1, nil, (IsPartyLeader and IsPartyLeader()) and 2 or 0)
-		for i = 1, GetNumPartyMembers() do
-			add("party" .. i, 1, nil, UnitIsPartyLeader and UnitIsPartyLeader("party" .. i) and 2 or 0)
+		add("player", 1, nil, self.API.IsLeader("player") and 2 or 0)
+		for i = 1, self.API.NumParty() do
+			add("party" .. i, 1, nil, self.API.IsLeader("party" .. i) and 2 or 0)
 		end
 	end
 	if #roster == 0 then add("player", 1) end
@@ -147,14 +142,12 @@ end
 
 -- Messaging -----------------------------------------------------------------
 function BM:Channel()
-	if GetNumRaidMembers() > 0 then return "RAID" end
-	if GetNumPartyMembers() > 0 then return "PARTY" end
-	return nil
+	return self.API.Channel()
 end
 
 function BM:Send(msg)
 	local ch = self:Channel()
-	if ch then SendAddonMessage(self.PREFIX, msg, ch) end
+	if ch then self.API.SendAddon(self.PREFIX, msg, ch) end
 end
 
 function BM:SendHello()
@@ -181,6 +174,7 @@ local function ParseCaps(str)
 end
 
 BM:On("CHAT_MSG_ADDON", function(_, prefix, msg, channel, sender)
+	sender = BM.API.ShortName(sender)
 	if prefix ~= BM.PREFIX or sender == BM.playerName or not msg then return end
 	local kind, a, b, c, d, e = strsplit("|", msg)
 	if kind == "HI" then
@@ -237,6 +231,7 @@ local inspectName, inspectClass
 local lastInspect, failedAt = 0, {}
 
 function BM:InspectNext()
+	if not self.API.CanInspectTalents() then return end
 	if InCombatLockdown() or not self:InGroup() then return end
 	if InspectFrame and InspectFrame:IsShown() then return end
 	local now = GetTime()
@@ -295,6 +290,7 @@ local function RosterChanged()
 end
 
 BM:On("RAID_ROSTER_UPDATE", RosterChanged)
+BM:On("GROUP_ROSTER_UPDATE", RosterChanged)
 BM:On("PARTY_MEMBERS_CHANGED", RosterChanged)
 BM:On("PARTY_LEADER_CHANGED", function() BM:RequestRefresh(0.6) end)
 BM:On("PLAYER_ENTERING_WORLD", function()
@@ -311,6 +307,10 @@ local function SpecChanged()
 	end)
 end
 BM:On("PLAYER_TALENT_UPDATE", SpecChanged)
+BM:On("PLAYER_SPECIALIZATION_CHANGED", function(_, unit)
+	if unit == nil or unit == "player" then SpecChanged() end
+end)
+BM:On("TRAIT_CONFIG_UPDATED", SpecChanged)
 BM:On("ACTIVE_TALENT_GROUP_CHANGED", SpecChanged)
 BM:On("SPELLS_CHANGED", function()
 	BM:Schedule("spells", 1.0, function() BM:RequestRefresh(0.1); BM:SendHello() end)
@@ -323,6 +323,7 @@ BM:On("UNIT_AURA", function(_, unit)
 end)
 
 BM:OnInit(function()
+	BM.API.RegisterPrefix(BM.PREFIX)
 	BM:ScanSpellbook()
 	BM:DetectSelfSpec()
 	BM:Refresh()

@@ -1,13 +1,13 @@
 --[[ Buff Me - Core
      Event dispatch, saved variables, timers, slash commands.
-     Written for the 3.3.5a client (Lua 5.1, no C_Timer, no Mixins).
+     Runs on 3.3.5a and on the WoW Forever / Mainline-family client (see Compat.lua).
 ]]
 
 BuffMe = BuffMe or {}
 local BM = BuffMe
 
 BM.name = "BuffMe"
-BM.version = "1.2.0"
+BM.version = "1.3.0"
 BM.PREFIX = "BuffMe"
 
 local pairs, ipairs, type, tinsert = pairs, ipairs, type, table.insert
@@ -71,7 +71,8 @@ local handlers = {}
 function BM:On(event, fn)
 	if not handlers[event] then
 		handlers[event] = {}
-		eventFrame:RegisterEvent(event)
+		-- newer clients throw on events that no longer exist; just skip those
+		pcall(eventFrame.RegisterEvent, eventFrame, event)
 	end
 	tinsert(handlers[event], fn)
 end

@@ -244,7 +244,7 @@ function BM:UseGreater(key)
 	local def = self.BLESSINGS[key]
 	if not def or db.greaterMode == "normal" then return false end
 	if not self:Knows(def.greater) then return false end
-	if GetItemCount(self.SYMBOL_OF_KINGS) == 0 then return false end
+	if BM.API.GetItemCount(self.SYMBOL_OF_KINGS) == 0 then return false end
 	if db.greaterMode == "greater" then return true end
 	return self:GroupSize() >= db.greaterMinGroup
 end
@@ -260,7 +260,7 @@ local function IsRecent(key)
 end
 
 local function GCDActive(spell)
-	local s, d = GetSpellCooldown(spell)
+	local s, d = BM.API.GetSpellCooldown(spell)
 	return s and s > 0 and d and d > 0 and (s + d - GetTime()) > 0.25
 end
 
@@ -346,7 +346,7 @@ function P:Select(mod, commit)
 				if sdef then
 					local spell = BM:SpellName(sdef)
 					if not BM:HasAny(auras(m), NamesFor(key), minLeft) then
-						if IsSpellInRange(spell, m.unit) == 1 then
+						if BM.API.IsSpellInRange(spell, m.unit) == 1 then
 							if not IsRecent(m.name .. "|" .. spell) then
 								pending = pending + 1
 								if isGreater then
@@ -439,7 +439,7 @@ function P:UnitStates()
 			elseif BM:HasAny(BM:ReadAuras(m.unit), NamesFor(key), minLeft) then
 				out[m.name] = "ok"
 			else
-				out[m.name] = (IsSpellInRange(BM:SpellName(sdef), m.unit) == 1) and "need" or "far"
+				out[m.name] = (BM.API.IsSpellInRange(BM:SpellName(sdef), m.unit) == 1) and "need" or "far"
 			end
 		end
 	end
@@ -492,6 +492,6 @@ function P:PlanLines()
 end
 
 function P:ReagentText()
-	local n = GetItemCount(BM.SYMBOL_OF_KINGS)
+	local n = BM.API.GetItemCount(BM.SYMBOL_OF_KINGS)
 	return "Symbol of Kings: " .. n, n
 end

@@ -46,7 +46,7 @@ local function IsRecent(key)
 end
 
 local function GCDActive(spell)
-	local s, d = GetSpellCooldown(spell)
+	local s, d = BM.API.GetSpellCooldown(spell)
 	return s and s > 0 and d and d > 0 and (s + d - GetTime()) > 0.25
 end
 
@@ -145,7 +145,7 @@ local function Build(class, defs)
 						local lacking, perGroup = {}, {}
 						for _, m in ipairs(BM.roster) do
 							if Matches(def, m) and BM:UnitUsable(m.unit) and not BM:HasAny(auras(m), names, minLeft) then
-								if IsSpellInRange(sName, m.unit) == 1 and not IsRecent(m.name .. "|" .. sName) then
+								if BM.API.IsSpellInRange(sName, m.unit) == 1 and not IsRecent(m.name .. "|" .. sName) then
 									lacking[#lacking + 1] = m
 									perGroup[m.subgroup] = (perGroup[m.subgroup] or 0) + 1
 								else
@@ -231,7 +231,7 @@ local function Build(class, defs)
 							if def.aoe then
 								inRange = m.isMe or CheckInteractDistance(m.unit, 4)
 							else
-								inRange = IsSpellInRange(BM:SpellName(sd), m.unit) == 1
+								inRange = BM.API.IsSpellInRange(BM:SpellName(sd), m.unit) == 1
 							end
 							if inRange then need = true else far = true end
 						end

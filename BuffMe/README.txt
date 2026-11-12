@@ -1,4 +1,4 @@
-BUFF ME 1.2.0  -  for WoW 3.3.5a (Wrath)
+BUFF ME 1.3.0  -  for WoW 3.3.5a (Wrath)
 ========================================
 
 Install

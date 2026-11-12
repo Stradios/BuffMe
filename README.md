@@ -1,6 +1,6 @@
 # Buff Me
 
-**One-click smart buffing for every buffing class, on WoW 3.3.5a (Wrath of the Lich King).**
+**One-click smart buffing for every buffing class, on WoW 3.3.5a (Wrath of the Lich King) and WoW: Forever.**
 
 Buff Me is a modern, themed buff manager. Press one button and it casts the next buff that someone in your group or raid needs. Keep pressing and everyone gets buffed. Paladin blessings are assigned automatically, with no setup panel to open.
 
@@ -73,7 +73,8 @@ These can be changed in the settings.
 
 ## Compatibility
 
-- **Client:** WoW 3.3.5a (Interface 30300). Tested on Warmane.
+- **Client:** WoW 3.3.5a (Interface 30300, tested on Warmane) and the WoW: Forever client (Interface 16001, via `BuffMe_Camelot.toc`). One code base; `Compat.lua` is the only file that knows the clients differ, and it detects features instead of version numbers, so a patch that moves an API will not silently break the add-on.
+- **Forever beta notes:** the client does not read SavedVariables back yet, so settings reset each login. When the client hides aura data (secret values), Buff Me stops suggesting buffs instead of guessing. Spec detection uses the specialization API; other players' talents are not inspected, so roles come from the group's role assignments.
 - **UI add-ons:** ElvUI and DragonUI are optional dependencies and are detected automatically. Other UIs use the dark theme.
 - **Classes:** Paladin (full auto-assignment), Priest, Druid, Mage, Warrior, Death Knight.
 

@@ -336,6 +336,21 @@ local menuFrame
 local function ShowPlayerMenu(b)
 	local m = b.memberName and BM.members[b.memberName]
 	if not m or b.sim or Provider() ~= BM.providers.PALADIN then return end
+	if not UIDropDownMenu_Initialize and MenuUtil and MenuUtil.CreateContextMenu then
+		MenuUtil.CreateContextMenu(b, function(_, root)
+			root:CreateTitle(m.name)
+			root:CreateRadio("Automatic", function() return BM.playerPref[m.name] == nil end,
+				function() BM.playerPref[m.name] = nil; BM:RequestRefresh(0.05) end)
+			for _, key in ipairs(BM.BLESSING_ORDER) do
+				if BM:Knows(BM.BLESSINGS[key].normal) then
+					root:CreateRadio(BM:BlessingName(key), function() return BM.playerPref[m.name] == key end,
+						function() BM.playerPref[m.name] = key; BM:RequestRefresh(0.05) end)
+				end
+			end
+		end)
+		return
+	end
+	if not UIDropDownMenu_Initialize then return end
 	if not menuFrame then
 		menuFrame = CreateFrame("Frame", "BuffMePlayerMenu", UIParent, "UIDropDownMenuTemplate")
 	end
@@ -377,7 +392,7 @@ local function CreatePlayerButton(i)
 	b.hl:SetBlendMode("ADD")
 	b.hl:SetAllPoints()
 	b.pref = b:CreateTexture(nil, "OVERLAY")
-	b.pref:SetTexture(1, 0.82, 0.2, 1)
+	BM.API.Solid(b.pref, 1, 0.82, 0.2, 1)
 	b.pref:SetWidth(5)
 	b.pref:SetHeight(5)
 	b.pref:SetPoint("TOPRIGHT", b, "TOPRIGHT", -1, -1)
@@ -472,7 +487,7 @@ function UI:LayoutPlayers(force)
 			return
 		end
 		local size = db.playerSize or 26
-		local isRaid = sim and BM.sim.size > 5 or (not sim and GetNumRaidMembers() > 0)
+		local isRaid = sim and BM.sim.size > 5 or (not sim and BM.API.NumRaid() > 0)
 		local cols = UI.BuildColumns(list, isRaid)
 		local inset = math.max(1, S:IconInset() - 1)
 		local idx, maxRows = 0, 0
@@ -583,7 +598,7 @@ function UI:StyleMinimap()
 		mini.lock:SetPoint("BOTTOMRIGHT", mini, "BOTTOMRIGHT", 3, -3)
 	else
 		S.registry[mini] = nil
-		mini:SetBackdrop(nil)
+		if mini.SetBackdrop then mini:SetBackdrop(nil) end
 		mini:SetSize(31, 31)
 		mini.overlay:Show()
 		mini.background:Show()
@@ -697,10 +712,8 @@ function BM:ResetPosition()
 end
 
 function BM:OpenOptions()
-	if BM.optionsPanel and InterfaceOptionsFrame_OpenToCategory then
-		-- called twice on purpose: the 3.3.5 client opens the wrong tab on the first call
-		InterfaceOptionsFrame_OpenToCategory(BM.optionsPanel)
-		InterfaceOptionsFrame_OpenToCategory(BM.optionsPanel)
+	if BM.optionsPanel and BM.API.OpenOptions(BM.optionsPanel) then
+		return
 	else
 		self:Print("Settings are not ready yet.")
 	end
@@ -836,7 +849,7 @@ local function CreateGrid()
 			cell.edge = cell:CreateTexture(nil, "BORDER")
 			cell.edge:SetPoint("TOPLEFT", -1, 1)
 			cell.edge:SetPoint("BOTTOMRIGHT", 1, -1)
-			cell.edge:SetTexture(1, 0.82, 0.2, 1)
+			BM.API.Solid(cell.edge, 1, 0.82, 0.2, 1)
 			cell:SetScript("OnClick", CellClick)
 			cell:SetScript("OnEnter", CellTooltip)
 			cell:SetScript("OnLeave", function() GameTooltip:Hide() end)

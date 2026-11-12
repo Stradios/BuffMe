@@ -12,37 +12,35 @@ BM.SP = SP
 -- Spell helpers -------------------------------------------------------------
 function BM:SpellName(def)
 	if def.name then return def.name end
-	local n = GetSpellInfo(def.id)
+	local n = BM.API.GetSpellInfo(def.id)
 	if not n or (GetLocale() == "enUS" and n ~= def.en) then n = def.en end
 	def.name = n
 	return n
 end
 
 function BM:SpellTexture(def)
-	local tex = select(3, GetSpellInfo(def.id))
+	local _, _, tex = BM.API.GetSpellInfo(def.id)
+	if not tex then _, _, tex = BM.API.GetSpellInfo(self:SpellName(def)) end
 	return tex or "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 
-local known = {}
+local known, knownID = {}, {}
 BM.known = known
 
 function BM:ScanSpellbook()
-	for k in pairs(known) do known[k] = nil end
-	local i = 1
-	while true do
-		local name = GetSpellName(i, BOOKTYPE_SPELL or "spell")
-		if not name then break end
-		known[name] = true
-		i = i + 1
-	end
+	BM.API.ScanSpellbook(known, knownID)
 end
 
 function BM:Knows(def)
-	return def and known[self:SpellName(def)] or false
+	if not def then return false end
+	if knownID[def.id] or known[self:SpellName(def)] then return true end
+	-- clients that can answer "do I know spell X" directly (ids may differ per client)
+	return BM.API.IsSpellKnownByID(def.id) == true
 end
 
 BM:On("SPELLS_CHANGED", function() BM:ScanSpellbook() end)
 BM:On("LEARNED_SPELL_IN_TAB", function() BM:ScanSpellbook() end)
+BM:On("LEARNED_SPELL_IN_SKILL_LINE", function() BM:ScanSpellbook() end)
 
 -- Classes -------------------------------------------------------------------
 BM.CLASS_ORDER = {
@@ -100,11 +98,25 @@ BM.SPEC_ROLE = {
 	DRUID       = { "caster", "melee", "healer" },
 }
 
+-- Same, for clients that use the specialization API (Druid has four specs there)
+BM.SPEC_ROLE_MODERN = {
+	WARRIOR     = { "melee", "melee", "tank" },
+	PALADIN     = { "healer", "tank", "melee" },
+	HUNTER      = { "ranged", "ranged", "ranged" },
+	ROGUE       = { "melee", "melee", "melee" },
+	PRIEST      = { "healer", "healer", "caster" },
+	DEATHKNIGHT = { "tank", "melee", "melee" },
+	SHAMAN      = { "caster", "melee", "healer" },
+	MAGE        = { "caster", "caster", "caster" },
+	WARLOCK     = { "caster", "caster", "caster" },
+	DRUID       = { "caster", "melee", "tank", "healer" },
+}
+
 -- Helpers -------------------------------------------------------------------
 function BM:GroupSize()
-	local raid = GetNumRaidMembers()
+	local raid = BM.API.NumRaid()
 	if raid > 0 then return raid end
-	local party = GetNumPartyMembers()
+	local party = BM.API.NumParty()
 	if party > 0 then return party + 1 end
 	return 1
 end
@@ -116,24 +128,13 @@ end
 --- Reads a unit's buffs into { [name] = remainingSeconds | true }.
 --  `true` means "present but the client doesn't tell us the timer".
 function BM:ReadAuras(unit)
-	local t = {}
-	local i = 1
-	local now = GetTime()
-	while true do
-		local name, _, _, _, _, _, expires = UnitBuff(unit, i)
-		if not name then break end
-		if expires and expires > 0 then
-			t[name] = expires - now
-		else
-			t[name] = true
-		end
-		i = i + 1
-	end
-	return t
+	return BM.API.ReadAuras(unit)
 end
 
 --- True when the aura table has any of `names` with at least `minLeft` seconds left.
 function BM:HasAny(auras, names, minLeft)
+	-- aura data hidden by the client: never guess, treat as "already buffed"
+	if auras.restricted then return true end
 	for i = 1, #names do
 		local v = auras[names[i]]
 		if v then

@@ -51,7 +51,7 @@ function S:ElvUI()
 end
 
 function S:HasDragonUI()
-	return (DragonUI ~= nil) or (IsAddOnLoaded and IsAddOnLoaded("DragonUI")) or false
+	return (DragonUI ~= nil) or BM.API.IsAddOnLoaded("DragonUI") or false
 end
 
 --- Resolved theme name.
@@ -119,6 +119,8 @@ function S:Apply(frame, kind, state)
 		end
 	end
 
+	BM.API.EnableBackdrop(frame)
+	if not frame.SetBackdrop then return end
 	frame:SetBackdrop({
 		bgFile = th.bgFile, edgeFile = th.edgeFile, tile = false, edgeSize = th.edgeSize,
 		insets = { left = th.inset, right = th.inset, top = th.inset, bottom = th.inset },

@@ -58,7 +58,7 @@ local function NewPanel(name, parent, title, subtitle)
 	p.okay = function() end
 	p.cancel = function() end
 	p.default = function() end
-	InterfaceOptions_AddCategory(p)
+	BM.API.AddOptionsPanel(p, parent and BM.optionsPanel or nil)
 	return p
 end
 
@@ -75,9 +75,15 @@ end
 
 local function Check(p, x, y, label, tip, get, set)
 	local name = GName("Check")
-	local cb = CreateFrame("CheckButton", name, p, "InterfaceOptionsCheckButtonTemplate")
+	local cb = BM.API.CreateWithTemplate("CheckButton", name, p,
+		{ "InterfaceOptionsCheckButtonTemplate", "UICheckButtonTemplate", "ChatConfigCheckButtonTemplate" })
 	cb:SetPoint("TOPLEFT", p, "TOPLEFT", x, y)
-	_G[name .. "Text"]:SetText(label)
+	local text = _G[name .. "Text"] or cb.Text or cb.text
+	if not text then
+		text = cb:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+		text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+	end
+	text:SetText(label)
 	cb:SetScript("OnClick", function(self)
 		set(self:GetChecked() and true or false)
 	end)
@@ -89,7 +95,22 @@ end
 
 local function Slider(p, x, y, label, minv, maxv, step, get, set, fmt)
 	local name = GName("Slider")
-	local s = CreateFrame("Slider", name, p, "OptionsSliderTemplate")
+	local s = BM.API.CreateWithTemplate("Slider", name, p, { "OptionsSliderTemplate" })
+	if not _G[name .. "Text"] then
+		-- template missing: build the pieces ourselves
+		s:SetOrientation("HORIZONTAL")
+		s:SetHeight(16)
+		s:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+		local bar = s:CreateTexture(nil, "BACKGROUND")
+		bar:SetPoint("LEFT"); bar:SetPoint("RIGHT"); bar:SetHeight(4)
+		BM.API.Solid(bar, 0.3, 0.3, 0.3, 1)
+		_G[name .. "Text"] = s:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+		_G[name .. "Text"]:SetPoint("BOTTOM", s, "TOP", 0, 2)
+		_G[name .. "Low"] = s:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+		_G[name .. "Low"]:SetPoint("TOPLEFT", s, "BOTTOMLEFT", 0, -2)
+		_G[name .. "High"] = s:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+		_G[name .. "High"]:SetPoint("TOPRIGHT", s, "BOTTOMRIGHT", 0, -2)
+	end
 	s:SetPoint("TOPLEFT", p, "TOPLEFT", x, y)
 	s:SetWidth(200)
 	s:SetMinMaxValues(minv, maxv)
@@ -116,6 +137,7 @@ local function Slider(p, x, y, label, minv, maxv, step, get, set, fmt)
 end
 
 local function SetDropdownWidth(dd, width)
+	if not UIDropDownMenu_SetWidth then return end
 	-- the argument order differs between client versions; the wrong order just errors, so try both
 	if not pcall(UIDropDownMenu_SetWidth, width, dd) then
 		pcall(UIDropDownMenu_SetWidth, dd, width)
@@ -124,6 +146,30 @@ end
 
 local function Dropdown(p, x, y, label, items, get, set, width)
 	local name = GName("DD")
+	if not (UIDropDownMenu_Initialize and UIDropDownMenu_AddButton and pcall(CreateFrame, "Frame", nil, p, "UIDropDownMenuTemplate")) then
+		-- the client has no classic dropdown: a button that cycles through the choices
+		local function list() return type(items) == "function" and items() or items end
+		local lab = p:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+		lab:SetPoint("TOPLEFT", p, "TOPLEFT", x, y)
+		lab:SetText(label)
+		local btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+		btn:SetPoint("TOPLEFT", p, "TOPLEFT", x, y - 14)
+		btn:SetSize(width or 150, 24)
+		function btn:Refresh()
+			local cur, text = get(), ""
+			for _, it in ipairs(list()) do if it.value == cur then text = it.text end end
+			self:SetText(text .. "  >")
+		end
+		btn:SetScript("OnClick", function(self)
+			local l, cur, idx = list(), get(), 1
+			for i, it in ipairs(l) do if it.value == cur then idx = i end end
+			local nxt = l[(idx % #l) + 1]
+			if nxt then set(nxt.value) end
+			self:Refresh()
+		end)
+		tinsert(p.widgets, btn)
+		return btn
+	end
 	local dd = CreateFrame("Frame", name, p, "UIDropDownMenuTemplate")
 	dd:SetPoint("TOPLEFT", p, "TOPLEFT", x - 16, y - 16)
 	local lab = p:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
@@ -176,7 +222,7 @@ local function Swatch(p, x, y, label, get, set)
 	b.edge = b:CreateTexture(nil, "BACKGROUND")
 	b.edge:SetPoint("TOPLEFT", -1, 1)
 	b.edge:SetPoint("BOTTOMRIGHT", 1, -1)
-	b.edge:SetTexture(1, 1, 1, 1)
+	BM.API.Solid(b.edge, 1, 1, 1, 1)
 	b.tex = b:CreateTexture(nil, "ARTWORK")
 	b.tex:SetAllPoints()
 	local fs = b:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -184,25 +230,13 @@ local function Swatch(p, x, y, label, get, set)
 	fs:SetText(label)
 	function b:Refresh()
 		local c = get()
-		self.tex:SetTexture(c[1], c[2], c[3], 1)
+		BM.API.Solid(self.tex, c[1], c[2], c[3], 1)
 	end
 	b:SetScript("OnClick", function()
 		local c = get()
-		local r, g, bl = c[1], c[2], c[3]
-		ColorPickerFrame.hasOpacity = false
-		ColorPickerFrame.previousValues = { r, g, bl }
-		ColorPickerFrame.func = function()
-			local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-			set({ nr, ng, nb })
-			b:Refresh()
-		end
-		ColorPickerFrame.cancelFunc = function(prev)
-			if prev then set({ prev[1], prev[2], prev[3] }) end
-			b:Refresh()
-		end
-		ColorPickerFrame:SetColorRGB(r, g, bl)
-		ColorPickerFrame:Hide()
-		ColorPickerFrame:Show()
+		BM.API.PickColor(c[1], c[2], c[3],
+			function(nr, ng, nb) set({ nr, ng, nb }); b:Refresh() end,
+			function(pr, pg, pb) set({ pr, pg, pb }); b:Refresh() end)
 	end)
 	tinsert(p.widgets, b)
 	return b
