@@ -191,7 +191,7 @@ function UI:ShowTooltip()
 	GameTooltip:AddLine("Click: cast on the next person who needs it", 0.8, 0.8, 0.8)
 	if p and p.ModLines then
 		for _, l in ipairs(p:ModLines()) do
-			GameTooltip:AddDoubleLine(l[1], l[2], 0.8, 0.8, 0.8, 1, 1, 1)
+			GameTooltip:AddDoubleLine(l[1], l[2], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3])
 		end
 	end
 	if BM.db.wheelCast then GameTooltip:AddLine("Mouse wheel over the button also casts", 0.6, 0.6, 0.6) end
@@ -332,7 +332,7 @@ local function PlayerTooltip(self)
 			GameTooltip:AddLine(msg, 0.4, 1, 0.5)
 		end
 		for _, l in ipairs(p:ModLines()) do
-			GameTooltip:AddDoubleLine(l[1], l[2], 0.8, 0.8, 0.8, 1, 1, 1)
+			GameTooltip:AddDoubleLine(l[1], l[2], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3])
 		end
 		if p == BM.providers.PALADIN then
 			local pref = BM.playerPref[m.name]

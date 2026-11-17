@@ -97,6 +97,14 @@ function BM:BlessingName(key)
 	return def and self:SpellName(def.normal) or tostring(key)
 end
 
+-- tooltip colours, matched to the spell icons
+BM.BLESSING_COLORS = {
+	kings     = { 0.78, 0.58, 1.00 },  -- light purple helm
+	might     = { 1.00, 0.70, 0.50 },  -- skin-coloured fist
+	wisdom    = { 1.00, 0.88, 0.25 },  -- yellow centre
+	sanctuary = { 0.62, 0.40, 0.92 },  -- dark purple shield
+}
+
 function BM:BlessingTexture(key)
 	local def = self.BLESSINGS[key]
 	return def and self:SpellTexture(def.normal) or "Interface\\Icons\\INV_Misc_QuestionMark"

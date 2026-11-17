@@ -484,7 +484,10 @@ function P:ModLines()
 		local key = db.mods[e[1]]
 		if key then
 			local def = BM.BLESSINGS[key]
-			out[#out + 1] = { e[2] .. " + click", (def and BM:SpellLabel(def.normal) or BM:BlessingName(key)) .. " (normal)" }
+			out[#out + 1] = {
+				e[2], (def and BM:SpellLabel(def.normal) or BM:BlessingName(key)),
+				BM.BLESSING_COLORS[key] or { 1, 0.82, 0 },
+			}
 		end
 	end
 	return out

@@ -7,7 +7,7 @@ BuffMe = BuffMe or {}
 local BM = BuffMe
 
 BM.name = "BuffMe"
-BM.version = "1.3.3"
+BM.version = "1.3.4"
 BM.PREFIX = "BuffMe"
 
 local pairs, ipairs, type, tinsert = pairs, ipairs, type, table.insert
@@ -36,6 +36,7 @@ BM.defaults = {
 	showTargetName = true,
 	tooltips = true,
 	wheelCast = true,
+	myOverrides = {},               -- blessings I set by hand in the assignment window (class -> key); kept between sessions
 	castMode = "spell",             -- spell | macro  (macro is a fallback, see /bm cast)
 	myRole = "auto",                -- auto | tank | healer | melee | ranged | caster
 	greaterMode = "auto",           -- auto | greater | normal

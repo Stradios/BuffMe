@@ -304,7 +304,7 @@ H1 .. "Greater or normal blessings?" .. R .. "\n" ..
 
 H1 .. "Assignment window" .. R .. "\n" ..
 "Right-click the minimap icon (or /bm grid) to see who casts what on which class. It is for looking, and for overrides: click a cell to change it, right-click to go back to automatic. " ..
-"You can change your own row; raid leaders and assistants can change anyone's. Overrides last until you leave the group or reload.\n\n" ..
+"You can change your own row; raid leaders and assistants can change anyone's. Your own choices are saved and kept when you log out; others' last until they leave the group.\n\n" ..
 
 H1 .. "Minimap icon" .. R .. "\n" ..
 H2 .. "Left-click:" .. R .. " lock / unlock the button. Unlocked, the button has a yellow border and can be dragged. The padlock on the icon shows the current state.\n" ..

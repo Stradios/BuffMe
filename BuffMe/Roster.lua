@@ -216,9 +216,29 @@ function BM:SetOverride(pal, class, value)
 	self:ApplyOverride(pal, class, value)
 	if pal == self.playerName then
 		self.myOverrides[class] = (value ~= "auto") and value or nil
+		self:SaveMyOverrides()
 	end
 	self:Send(tconcat({ "OVR", pal, class, value or "auto" }, "|"))
 	self:RequestRefresh(0.05)
+end
+
+--- My own hand-picked assignments are saved, so they survive a log-out.
+function BM:SaveMyOverrides()
+	if not self.db then return end
+	local t = {}
+	for class, value in pairs(self.myOverrides) do t[class] = value end
+	self.db.myOverrides = t
+end
+
+function BM:LoadMyOverrides()
+	local saved = self.db and self.db.myOverrides
+	if type(saved) ~= "table" then return end
+	for class, value in pairs(saved) do
+		if type(class) == "string" and (value == "none" or self.BLESSINGS[value]) then
+			self.myOverrides[class] = value
+			self:ApplyOverride(self.playerName, class, value)
+		end
+	end
 end
 
 function BM:ClearOverrides()
@@ -226,6 +246,7 @@ function BM:ClearOverrides()
 	for class in pairs(self.myOverrides) do mine[#mine + 1] = class end
 	self.overrides = {}
 	self.myOverrides = {}
+	self:SaveMyOverrides()
 	for _, class in ipairs(mine) do
 		self:Send(tconcat({ "OVR", self.playerName, class, "auto" }, "|"))
 	end
@@ -346,6 +367,7 @@ BM:OnInit(function()
 	BM.API.RegisterPrefix(BM.PREFIX)
 	BM:ScanSpellbook()
 	BM:DetectSelfSpec()
+	BM:LoadMyOverrides()
 	BM:Refresh()
 	-- talent data is sometimes not ready right at login
 	BM:Schedule("spec_login", 3, function()

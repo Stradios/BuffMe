@@ -253,7 +253,7 @@ local function Build(class, defs)
 		local names = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", ctrlshift = "Shift+Ctrl" }
 		for _, def in ipairs(defs) do
 			if def.slot then
-				out[#out + 1] = { names[def.slot] .. " + click", self:Label(def) .. (def.aoe and "" or " (target / mouseover / you)") }
+				out[#out + 1] = { names[def.slot], self:Label(def) .. (def.aoe and "" or " (target / mouseover / you)"), { 0.4, 0.8, 1 } }
 			end
 		end
 		return out
