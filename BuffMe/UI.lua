@@ -7,6 +7,15 @@
 local BM = BuffMe
 local S = BM.Skin
 local UI = {}
+
+--- One "Shift + click   Blessing of Kings" tooltip line: the key name and the spell are
+--  coloured (l[3]), the words " + click" stay white.
+function UI.AddModLine(l)
+	local c = l[3] or { 1, 1, 1 }
+	local hex = ("|cff%02x%02x%02x"):format(math.floor(c[1] * 255 + 0.5), math.floor(c[2] * 255 + 0.5), math.floor(c[3] * 255 + 0.5))
+	GameTooltip:AddDoubleLine(hex .. l[1] .. "|r|cffffffff + click|r", l[2], 1, 1, 1, c[1], c[2], c[3])
+end
+
 BM.UI = UI
 
 local btn, mini, grid
@@ -191,7 +200,7 @@ function UI:ShowTooltip()
 	GameTooltip:AddLine("Click: cast on the next person who needs it", 0.8, 0.8, 0.8)
 	if p and p.ModLines then
 		for _, l in ipairs(p:ModLines()) do
-			GameTooltip:AddDoubleLine(l[1], l[2], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3])
+			UI.AddModLine(l)
 		end
 	end
 	if BM.db.wheelCast then GameTooltip:AddLine("Mouse wheel over the button also casts", 0.6, 0.6, 0.6) end
@@ -332,7 +341,7 @@ local function PlayerTooltip(self)
 			GameTooltip:AddLine(msg, 0.4, 1, 0.5)
 		end
 		for _, l in ipairs(p:ModLines()) do
-			GameTooltip:AddDoubleLine(l[1], l[2], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3], (l[3] or {1,1,1})[1], (l[3] or {1,1,1})[2], (l[3] or {1,1,1})[3])
+			UI.AddModLine(l)
 		end
 		if p == BM.providers.PALADIN then
 			local pref = BM.playerPref[m.name]
