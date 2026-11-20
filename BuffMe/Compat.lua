@@ -390,9 +390,25 @@ function API.OpenOptions(p)
 		return true
 	end
 	if Settings and Settings.OpenToCategory and p and p.category then
-		local id = p.category.GetID and p.category:GetID() or p.category.ID or p.category
-		local ok = pcall(Settings.OpenToCategory, id)
-		return ok
+		local cat = p.category
+		local id = (cat.GetID and cat:GetID()) or cat.ID or cat
+		local function try()
+			-- the category id is the documented argument; the object itself is accepted by some builds
+			local ok, err = pcall(Settings.OpenToCategory, id)
+			if not ok then ok, err = pcall(Settings.OpenToCategory, cat) end
+			if not ok then ok, err = pcall(Settings.OpenToCategory, p.name) end
+			return ok, err
+		end
+		local ok, err = try()
+		-- some builds ignore the call while the settings window is closed: open it, then ask again
+		local function shown() return (SettingsPanel and SettingsPanel.IsShown and SettingsPanel:IsShown()) end
+		if SettingsPanel and not shown() then
+			if SettingsPanel.Open then pcall(SettingsPanel.Open, SettingsPanel) end
+			if C_Timer and C_Timer.After then C_Timer.After(0.05, try) else try() end
+			ok = true
+		end
+		if not ok then return false, err end
+		return true
 	end
 	return false
 end

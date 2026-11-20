@@ -755,10 +755,14 @@ function BM:ResetPosition()
 end
 
 function BM:OpenOptions()
-	if BM.optionsPanel and BM.API.OpenOptions(BM.optionsPanel) then
-		return
-	else
+	if not BM.optionsPanel then
 		self:Print("Settings are not ready yet.")
+		return
+	end
+	local ok, err = BM.API.OpenOptions(BM.optionsPanel)
+	if not ok then
+		self:Print("Could not open the settings window" .. (err and (": " .. tostring(err)) or ".")
+			.. " Open them from Esc > Options > AddOns > Buff Me.")
 	end
 end
 
